@@ -8,7 +8,8 @@ const typeDropdownRef = ref(null)
 const typeTriggerRef = ref(null)
 
 const typeOptions = ['AAAA', 'BBBB', 'CCCC', 'DDDD']
-const checkedTypes = ref([])
+/* 默认全选：表格有数据且与下拉勾选一致；全部取消勾选则表格不展示行 */
+const checkedTypes = ref([...typeOptions])
 
 const rows = [
   { name: '整数001', type: 'AAAA', contact: '10887388928' },
@@ -24,8 +25,16 @@ const filteredTypeOptions = computed(() => {
 })
 
 const filteredRows = computed(() => {
-  if (checkedTypes.value.length === 0) return rows
+  if (checkedTypes.value.length === 0) return []
   return rows.filter((r) => checkedTypes.value.includes(r.type))
+})
+
+/** 表体无数据时的说明（未勾选类型 / 已勾选但无匹配行） */
+const emptyTableHint = computed(() => {
+  if (checkedTypes.value.length === 0) {
+    return '未选择类型：请点击「类型」旁的筛选图标，勾选需要展示的数据类型。'
+  }
+  return '暂无符合当前已选类型的数据，请调整筛选条件。'
 })
 
 function toggleTypeFilter() {
@@ -57,35 +66,43 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 
 <template>
   <div class="shell">
-    <div class="panel" role="region" aria-label="订单表格">
-      <h1 class="panel__title">Title</h1>
-      <div class="panel__rule" />
+      <aside class="shell__sidebar" aria-label="侧边栏" />
+      <div class="shell__main" role="region" aria-label="订单表格">
+        <div class="shell__title-box">
+          <h1 class="shell__title">Title</h1>
+        </div>
 
-      <div class="tabs" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="activeTab === 'stats'"
-          class="tabs__btn"
-          :class="{ 'tabs__btn--active': activeTab === 'stats' }"
-          @click="activeTab = 'stats'"
-        >
-          订单统计
-        </button>
-        <button
-          type="button"
-          role="tab"
-          :aria-selected="activeTab === 'list'"
-          class="tabs__btn"
-          :class="{ 'tabs__btn--active': activeTab === 'list' }"
-          @click="activeTab = 'list'"
-        >
-          订单列表
-        </button>
-      </div>
+        <div class="shell__tabs tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === 'stats'"
+            class="tabs__btn"
+            :class="{ 'tabs__btn--active': activeTab === 'stats' }"
+            @click="activeTab = 'stats'"
+          >
+            <span class="tabs__btn-label">订单统计</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            :aria-selected="activeTab === 'list'"
+            class="tabs__btn"
+            :class="{ 'tabs__btn--active': activeTab === 'list' }"
+            @click="activeTab = 'list'"
+          >
+            <span class="tabs__btn-label">订单列表</span>
+          </button>
+        </div>
 
-      <div class="table-wrap">
+        <div class="shell__table">
+          <div class="table-wrap">
         <table class="grid">
+          <colgroup>
+            <col class="grid__col grid__col--name" />
+            <col class="grid__col grid__col--type" />
+            <col class="grid__col grid__col--contact" />
+          </colgroup>
           <thead>
             <tr>
               <th class="grid__th grid__th--left">名称</th>
@@ -122,8 +139,8 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
                     <img
                       class="icon-img icon-img--search"
                       src="/icon_search@2x.png"
-                      width="14"
-                      height="14"
+                      width="16"
+                      height="16"
                       alt=""
                       draggable="false"
                     />
@@ -168,72 +185,182 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
               </th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="(row, i) in filteredRows" :key="i">
-              <td class="grid__td grid__td--left">{{ row.name }}</td>
-              <td class="grid__td grid__td--center">{{ row.type }}</td>
-              <td class="grid__td grid__td--center">{{ row.contact }}</td>
-            </tr>
-          </tbody>
         </table>
+        <div class="table-wrap__body">
+          <table class="grid">
+            <colgroup>
+              <col class="grid__col grid__col--name" />
+              <col class="grid__col grid__col--type" />
+              <col class="grid__col grid__col--contact" />
+            </colgroup>
+            <tbody>
+              <template v-if="filteredRows.length === 0">
+                <tr class="grid__empty-row">
+                  <td
+                    class="grid__td grid__empty"
+                    colspan="3"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {{ emptyTableHint }}
+                  </td>
+                </tr>
+              </template>
+              <template v-else>
+                <tr v-for="(row, i) in filteredRows" :key="i">
+                  <td class="grid__td grid__td--left">{{ row.name }}</td>
+                  <td class="grid__td grid__td--center">{{ row.type }}</td>
+                  <td class="grid__td grid__td--center">{{ row.contact }}</td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+          </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 </template>
 
 <style scoped>
 .shell {
+  isolation: isolate;
   box-sizing: border-box;
   width: 736px;
   height: 407px;
-  padding: 20px 24px 16px;
-  background: #000000;
+  padding: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  background: transparent;
   color: #ffffff;
   font-family: system-ui, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;
   font-size: 13px;
   line-height: 1.35;
+  /* 侧栏与表格同色；其余主区域为 #101010 @ 10% */
+  --sidebar-table-bg: rgba(0, 0, 0);
+  --main-bg: rgba(16, 16, 16, 0.1);
+  --main-bg1: rgba(16, 16, 16);
+  --grid-line: rgba(255, 255, 255, 0.14);
+  /* 表头文字色（设计稿 var(--font, …)） */
+  --font: rgba(150, 150, 150, 1);
 }
 
-.panel {
+.shell__sidebar {
+  width: 80px;
+  height: 407px;
+  flex-shrink: 0;
+  background: var(--sidebar-table-bg);
+}
+
+.shell__main {
+  position: relative;
+  flex: 1 1 656px;
+  width: 656px;
+  min-width: 0;
+  height: 407px;
+  box-sizing: border-box;
+  background: var(--main-bg1);
+}
+
+/* Figma: 596×64, left 80 → 相对主区 left 0，贴侧栏 */
+.shell__title-box {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 596px;
+  height: 64px;
+  box-sizing: border-box;
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
+  align-items: center;
+  padding: 0 20px;
 }
 
-.panel__title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: #ffffff;
-  line-height: 1.2;
-}
-
-.panel__rule {
+/* 底边线左右各缩进 12px */
+.shell__title-box::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
   height: 1px;
-  background: #3a3a3a;
-  margin-top: 12px;
-  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.2);
 }
 
-.tabs {
+.shell__title {
+  margin: 0;
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 30px;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+/* 单项 83×40，gap 6 → 总宽约 172；top 80, left 104 → 主区内 left 24 */
+.shell__tabs {
+  position: absolute;
+  left: 24px;
+  top: 80px;
+  width: 172px;
+  height: 40px;
+  box-sizing: border-box;
   display: flex;
-  gap: 28px;
-  align-items: flex-end;
-  border-bottom: 1px solid transparent;
-  margin-bottom: 12px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
 }
 
 .tabs__btn {
-  padding: 0 0 8px;
+  box-sizing: border-box;
+  width: 83px;
+  height: 40px;
   margin: 0;
+  padding: 0 12px;
   border: none;
-  background: none;
+  border-radius: 6px;
+  background: transparent;
   cursor: pointer;
-  font: inherit;
   color: #8a8a8a;
-  position: relative;
+  flex: 0 0 83px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  transition: color 0.15s ease;
+}
+
+.tabs__btn-label {
+  display: block;
+  line-height: 20px;
+}
+
+/* 字体底部往下 5px、宽 70px 的下划线；未选中用透明条占位避免高度跳动 */
+.tabs__btn::after {
+  content: '';
+  display: block;
+  width: 70px;
+  height: 2px;
+  margin-top: 5px;
+  flex-shrink: 0;
+  background: transparent;
+  border-radius: 1px;
+}
+
+.tabs__btn:hover {
+  color: #e0e0e0;
 }
 
 .tabs__btn--active {
@@ -241,56 +368,153 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 }
 
 .tabs__btn--active::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 2px;
   background: #ffffff;
 }
 
-.table-wrap {
-  flex: 1;
-  min-height: 0;
-  border: 1px solid #3a3a3a;
+.tabs__btn:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 2px;
+}
+
+/* Figma: 572×211, top 136, left 104 → 主区内 left 24 */
+.shell__table {
+  position: absolute;
+  left: 24px;
+  top: 136px;
+  width: 572px;
+  height: 211px;
+  box-sizing: border-box;
+  background: var(--sidebar-table-bg);
+  border: 1px solid var(--grid-line);
   border-radius: 10px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
 }
 
-.grid {
+.shell__table .table-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
   width: 100%;
-  border-collapse: collapse;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: none;
+  border-radius: 10px;
+  overflow: visible;
+  background: transparent;
+}
+
+.shell__table .table-wrap__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  border-radius: 0 0 9px 9px;
+}
+
+.table-wrap__body .grid tbody tr:first-child td {
+  border-top: none;
+}
+
+.grid {
+  width: 570px;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
 }
 
+/* 列宽比例：120 + 210 + 240 = 570（与 572 容器边框内宽约一致） */
+.grid__col--name {
+  width: 120px;
+}
+
+.grid__col--type {
+  width: 210px;
+}
+
+.grid__col--contact {
+  width: 240px;
+}
+
+/* 仅右、下画线，避免相邻单元格双边框；外轮廓交给 .shell__table */
 .grid__th,
 .grid__td {
-  border: 1px solid #3a3a3a;
-  padding: 10px 14px;
+  border: 0 solid var(--grid-line);
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  box-sizing: border-box;
   font-weight: 400;
 }
 
+.grid__th:last-child,
+.grid__td:last-child {
+  border-right: none;
+}
+
+.shell__table .table-wrap .grid thead .grid__th {
+  border-top: none;
+  border-bottom: 1px solid var(--grid-line);
+}
+
+.shell__table .table-wrap__body .grid tbody tr:last-child .grid__td {
+  border-bottom: none;
+}
+
 .grid__th {
-  background: #000000;
-  color: #ffffff;
-  font-weight: 500;
+  height: 48px;
+  padding: 0 12px;
+  box-sizing: border-box;
+  background: transparent;
+  color: var(--font, rgba(150, 150, 150, 1));
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 14px;
+  line-height: 16px;
+  letter-spacing: 2px;
+  text-align: center;
   vertical-align: middle;
   position: relative;
 }
 
-.grid__th--left,
-.grid__td--left {
+/* 「名称」表头左对齐，与下方第一列数据对齐（padding 与 .grid__th 一致） */
+.grid__th--left {
   text-align: left;
-  width: 34%;
+  padding-left: 16px;
+  padding-right: 12px;
 }
 
-.grid__th--center,
+.grid__td {
+  height: 40px;
+  padding: 0 12px;
+  background: transparent;
+  vertical-align: middle;
+}
+
+/* 表头：名称左偏，其余居中；数据行第一列左对齐 */
+.grid__td--left {
+  text-align: left;
+}
+
 .grid__td--center {
   text-align: center;
-  width: 33%;
+}
+
+.grid__empty {
+  height: auto;
+  min-height: 96px;
+  padding: 20px 28px;
+  text-align: center;
+  vertical-align: middle;
+  color: rgba(255, 255, 255, 0.52);
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .grid__th-inner {
@@ -351,54 +575,96 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   top: calc(100% + 6px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10;
-  min-width: 168px;
-  padding: 10px 10px 8px;
-  background: #1a1a1a;
-  border: 1px solid #3a3a3a;
-  border-radius: 8px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 20;
+  width: 216px;
+  height: 186px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(67, 67, 67, 0.5);
+  border-radius: 12px;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  overflow: hidden;
 }
 
 .dropdown__search {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  width: 200px;
+  height: 32px;
+  padding: 0 10px 0 12px;
   gap: 8px;
-  padding: 6px 8px;
-  border: 1px solid #3a3a3a;
-  border-radius: 6px;
-  margin-bottom: 8px;
-  background: #0f0f0f;
+  border: 0.5px solid rgba(67, 67, 67, 1);
+  border-radius: 4px;
+  background: transparent;
+}
+
+.dropdown .dropdown__search .icon-img--search {
+  width: 16px;
+  height: 16px;
+  opacity: 1;
+  flex-shrink: 0;
 }
 
 .dropdown__input {
   flex: 1;
   min-width: 0;
+  height: 16px;
+  line-height: 16px;
   border: none;
   background: transparent;
   color: #ffffff;
-  font: inherit;
   outline: none;
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  letter-spacing: 2px;
 }
 
 .dropdown__input::placeholder {
-  color: #6b6b6b;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 2px;
 }
 
 .dropdown__list {
   list-style: none;
-  margin: 0;
+  margin: 8px 0 0;
   padding: 0;
+  width: 200px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .dropdown__item {
-  padding: 4px 0;
+  box-sizing: border-box;
+  width: 200px;
+  height: 32px;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .check {
   display: flex;
   align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
   gap: 8px;
+  padding: 0 8px;
   cursor: pointer;
   color: #e8e8e8;
   user-select: none;
@@ -417,7 +683,7 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   border: 1px solid #6b6b6b;
   border-radius: 2px;
   flex-shrink: 0;
-  background: #000;
+  background: rgba(0, 0, 0, 0.4);
 }
 
 .check__input:focus-visible + .check__box {
@@ -431,6 +697,9 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
 }
 
 .check__label {
-  font-size: 13px;
+  font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 1px;
 }
 </style>

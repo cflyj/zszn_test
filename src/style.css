@@ -50,8 +50,28 @@
   }
 }
 
+html {
+  min-height: 100%;
+}
+
 body {
   margin: 0;
+  min-height: 100svh;
+  /* 浅色调科幻（略压暗）：减轻刺眼，仍保持冷色光感 */
+  background-color: #cfd9e8;
+  background-image:
+    radial-gradient(ellipse 115% 70% at 50% -12%, rgba(125, 180, 240, 0.42) 0%, transparent 54%),
+    radial-gradient(ellipse 48% 42% at 96% 28%, rgba(139, 120, 220, 0.28) 0%, transparent 52%),
+    radial-gradient(ellipse 52% 48% at 4% 72%, rgba(100, 200, 160, 0.22) 0%, transparent 50%),
+    radial-gradient(ellipse 85% 58% at 52% 102%, rgba(160, 200, 245, 0.38) 0%, transparent 46%),
+    linear-gradient(
+      162deg,
+      #d8dfe8 0%,
+      #ccd6e4 30%,
+      #c8d2e0 58%,
+      #d2dae6 100%
+    );
+  background-attachment: fixed;
 }
 
 h1,
@@ -165,7 +185,7 @@ code {
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  background: #0a0a0a;
+  background: transparent;
 }
 
 #center {
