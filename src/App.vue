@@ -588,7 +588,6 @@ onUnmounted(() => document.removeEventListener('click', onDocClick))
   border: 1px solid rgba(67, 67, 67, 0.5);
   border-radius: 12px;
   backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
   overflow: hidden;
 }
 
