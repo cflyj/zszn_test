@@ -1,0 +1,10 @@
+# Netlify：必须用构建产物 dist，否则会发布带 /src/main.js 的源码 index → 白屏
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# 以后若使用 Vue Router history 模式，刷新子路径不会 404
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
